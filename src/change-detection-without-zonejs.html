@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Change Detection Without Zone.js</title>
+  </head>
+  <body>
+    <!--
+      Vanilla JS example demonstrating WHY Zone.js exists.
+
+      Angular needs to know when to re-render the view.
+      Without Zone.js, every async operation requires a manual detectChange() call.
+      Zone.js patches all async APIs (setTimeout, XHR, Promises, etc.)
+      so Angular can automatically trigger change detection after each one.
+
+      This example is the "before Zone.js" version — manual change detection
+      wired up for every async scenario.
+
+      Source: https://github.com/angular/angular/blob/17.3.x/aio/content/guide/zone.md
+    -->
+
+    <div id="dataDiv"></div>
+    <button id="btn">Update Data</button>
+
+    <script>
+      let value = 'initialValue';
+
+      // Initial render
+      detectChange();
+
+      function renderHTML() {
+        document.getElementById('dataDiv').innerText = value;
+      }
+
+      function detectChange() {
+        const currentValue = document.getElementById('dataDiv').innerText;
+        if (currentValue !== value) {
+          renderHTML();
+        }
+      }
+
+      // Example 1: Button click event
+      // Zone.js patches addEventListener
+      document.getElementById('btn').addEventListener('click', () => {
+        value = 'button update value';
+        detectChange(); // Zone.js would call this automatically
+      });
+
+      // Example 2: HTTP Request (XHR)
+      // Zone.js patches XMLHttpRequest
+      const xhr = new XMLHttpRequest();
+      xhr.responseType = 'json';
+      xhr.addEventListener('load', function () {
+        value = this.response.title;
+        detectChange(); // Zone.js would call this automatically
+      });
+      xhr.open('GET', 'https://jsonplaceholder.typicode.com/todos/1');
+      xhr.send();
+
+      // Example 3: setTimeout
+      // Zone.js patches setTimeout
+      setTimeout(() => {
+        value = 'timeout update value';
+        detectChange(); // Zone.js would call this automatically
+      }, 10000);
+
+      // Example 4: Promise.then
+      // Zone.js patches Promise
+      Promise.resolve('promise resolved a value').then((v) => {
+        value = v;
+        detectChange(); // Zone.js would call this automatically
+      });
+    </script>
+  </body>
+</html>
